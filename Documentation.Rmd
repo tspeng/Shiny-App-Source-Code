@@ -1,0 +1,107 @@
+---
+title: "Documentation"
+runtime: shiny
+output: html_document
+---
+
+## Introductions
+This application is to perform linear regression using data set cement. It is given to illustrate the accuracy for different combinations of predictors. Only two variables x1,x2 are selected to predict y using linear model. There are several features for this application.
+
+## User interface highlights
+
+1. The figure rendered depends on the user input
+
+2. Select the the predictor using Checkbox (x1,x2)
+
+3. Specify the level of confidence (0.6-0.99)
+
+4. Choose whether to plot the confidence interval level (Yes, No)
+
+5. The x axis is the true y value, yaxis the predited y value.
+
+6. The lightblue shade is the confidence interval specified by the user. 
+
+7. The black line is the ground truth for comparison. If the predicted values match the true ones, the data points will fall on this line exactly.
+
+```{r,echo=FALSE}
+myApp <- function (){
+library(shiny)
+library(UsingR)
+data(cement)
+shinyApp(
+    ui=shinyUI(pageWithSidebar(
+        #Application title
+        headerPanel("Linear Model (y~ x1, x2)"),
+        
+        sidebarPanel(
+            checkboxGroupInput("vn","Checkbox",
+                                c("x1"="x1",
+                                 "x2"="x2")),
+            sliderInput("level","Confidence Interval Level",value=0.8,min=0.6,max=0.99,step=0.01),
+            
+            radioButtons("CIplot","Confidence Interval Plot",
+                         c("Yes"=1,
+                           "No"=0))
+        ),
+        mainPanel(
+            plotOutput("newfig")
+        )
+    )),
+    
+    server =shinyServer(
+        function(input,output){
+            output$newfig <- renderPlot({
+                if (!is.null(input$vn)) {
+                    #Fit y~x1 and plot the confidence interval
+                    if (length(input$vn)==1 & input$vn[1]=="x1"){
+                        model <- lm(y ~ x1, data=cement)
+                        pred <- predict(model,newdata =data.frame(x1=cement$x1),interval="confidence",level=input$level)
+                        plot(cement$y,pred[,1],xlim=c(min(cement$y),max(cement$y)),ylim=c(min(cement$y),max(cement$y)),xlab="True y",ylab="Predicted y")
+                        abline(0,1)
+                        if (input$CIplot==1) {
+                            polygon(c(sort(cement$y,decreasing = TRUE), sort(cement$y)), c(sort(pred[ ,3],decreasing = TRUE), sort(pred[ ,2])), col = 'lightblue1')
+                            lines(sort(cement$y),sort(pred[,3]),lty="dashed",col="green")
+                            lines(sort(cement$y),sort(pred[,2]),lty="dashed",col="green")
+                        }
+      
+                    }
+                    #Fit y~x2 and plot the confidence interval
+                    else if (length(input$vn)==1 & input$vn[1]=="x2") {
+                        model <- lm(y ~ x2, data=cement)
+                        pred <- predict(model,newdata =data.frame(x2=cement$x2),interval="confidence",level=input$level)
+                        plot(cement$y,pred[,1],xlim=c(min(cement$y),max(cement$y)),ylim=c(min(cement$y),max(cement$y)),xlab="True y",ylab="Predicted y")
+                        abline(0,1)
+                        if (input$CIplot==1) {
+                            polygon(c(sort(cement$y,decreasing = TRUE), sort(cement$y)), c(sort(pred[ ,3],decreasing = TRUE), sort(pred[ ,2])), col = 'lightblue1')
+                            lines(sort(cement$y),sort(pred[,3]),lty="dashed",col="green")
+                            lines(sort(cement$y),sort(pred[,2]),lty="dashed",col="green")
+                        }
+                        
+                    }
+                    else {
+                        #Fit y~x1+x2 and plot the confidence interval
+                        model <- lm(y ~ x1 +  x2, data=cement)
+                        pred <- predict(model,newdata =data.frame(x1=cement$x1,x2=cement$x2),interval="confidence",level=input$level)
+                        plot(cement$y,pred[,1],xlim=c(min(cement$y),max(cement$y)),ylim=c(min(cement$y),max(cement$y)),xlab="True y",ylab="Predicted y")
+                        abline(0,1)
+                        if (input$CIplot==1) {
+                            polygon(c(sort(cement$y,decreasing = TRUE), sort(cement$y)), c(sort(pred[ ,3],decreasing = TRUE), sort(pred[ ,2])), col = 'lightblue1')
+                            lines(sort(cement$y),sort(pred[,3]),lty="dashed",col="green")
+                            lines(sort(cement$y),sort(pred[,2]),lty="dashed",col="green")
+                        }
+                    }
+                    
+                }
+            })
+    
+        }
+    )
+    
+    )
+}
+```
+
+```{r,echo=FALSE}
+myApp()
+```  
+
